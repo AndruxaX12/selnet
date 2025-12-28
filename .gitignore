@@ -30,7 +30,6 @@ apps/web/.vercel
 .firebase/
 .firebaserc.local
 **/serviceAccountKey.json
-**/*.json
 
 # Vercel
 .vercel/
