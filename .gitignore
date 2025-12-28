@@ -26,11 +26,11 @@ apps/web/.next/
 apps/web/out/
 apps/web/.vercel
 
-# Firebase Functions
-apps/functions/lib/
-apps/functions/dist/
+# Firebase
 .firebase/
 .firebaserc.local
+**/serviceAccountKey.json
+**/*.json
 
 # Vercel
 .vercel/
