@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /avatars/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && resource.name.matches('avatars/' + request.auth.uid + '\\..+');
+    }
+
+    match /signals/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null; // ще затегнем (анонимни през Cloud Function в по-късно)
+    }
+    
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null; // ще затегнем (анонимни през Cloud Function в по-късно)
+    }
+  }
+}

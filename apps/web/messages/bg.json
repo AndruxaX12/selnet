@@ -1,0 +1,18 @@
+{
+  "app.name": "СелНет",
+  "nav.signals": "Сигнали",
+  "nav.ideas": "Идеи",
+  "nav.events": "Събития",
+  "nav.map": "Карта",
+  "nav.me": "Моите",
+  "nav.search": "Търсене",
+  "nav.notifications": "Известия",
+  "nav.subscriptions": "Абонаменти",
+  "auth.login": "Вход",
+  "auth.logout": "Изход",
+  "actions.save": "Запази",
+  "actions.cancel": "Отказ",
+  "a11y.skip": "Към основното съдържание",
+  "lang.bg": "Български",
+  "lang.en": "English"
+}

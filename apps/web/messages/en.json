@@ -1,0 +1,18 @@
+{
+  "app.name": "SelNet",
+  "nav.signals": "Signals",
+  "nav.ideas": "Ideas",
+  "nav.events": "Events",
+  "nav.map": "Map",
+  "nav.me": "My stuff",
+  "nav.search": "Search",
+  "nav.notifications": "Notifications",
+  "nav.subscriptions": "Subscriptions",
+  "auth.login": "Sign in",
+  "auth.logout": "Sign out",
+  "actions.save": "Save",
+  "actions.cancel": "Cancel",
+  "a11y.skip": "Skip to main content",
+  "lang.bg": "Bulgarian",
+  "lang.en": "English"
+}

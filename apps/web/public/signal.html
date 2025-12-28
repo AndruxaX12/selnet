@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="bg">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подаване на нов сигнал - Моят Ботевград</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet.js CSS (за картата) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Шрифт Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Стил за картата в тази страница */
+        #map-submit {
+            height: 400px;
+            /* 400px височина */
+            border-radius: 0.75rem;
+            /* rounded-xl */
+            z-index: 10;
+        }
+
+        /* Стилизиран превключвател (toggle switch) */
+        .toggle-bg:after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background-color: white;
+            width: 1.25rem;
+            /* w-5 */
+            height: 1.25rem;
+            /* h-5 */
+            border-radius: 9999px;
+            /* rounded-full */
+            transition: transform 0.2s ease-in-out;
+        }
+
+        input:checked+.toggle-bg:after {
+            transform: translateX(100%);
+        }
+
+        input:checked+.toggle-bg {
+            background-color: #16a34a;
+            /* green-600 */
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <!-- Header - 1:1 with Next.js Header -->
+    <header
+        class="flex justify-between items-center px-4 py-2.5 border-b border-gray-200 z-50 bg-white shadow-sm sticky top-0">
+        <!-- Left: Logo + Nav -->
+        <div class="flex items-center gap-6">
+            <a href="/" class="flex items-center">
+                <div class="relative h-9 w-[180px] overflow-hidden">
+                    <img src="/logo-selnet-full.png" alt="СелНет"
+                        class="h-9 w-auto object-contain object-left transition-all duration-700" id="logo-selnet"
+                        style="opacity: 1;">
+                    <img src="/logo-botevgrad.png" alt="Моят Ботевград"
+                        class="absolute inset-0 h-9 w-auto object-contain object-left transition-all duration-700"
+                        id="logo-botevgrad" style="opacity: 0;">
+                </div>
+            </a>
+            <nav class="hidden md:flex items-center">
+                <a href="/signals"
+                    class="px-3 py-1.5 font-semibold text-sm text-gray-600 hover:text-green-600 transition-colors flex items-center gap-1.5 border border-gray-200 rounded-lg hover:border-green-400 hover:bg-green-50">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    Всички сигнали
+                </a>
+            </nav>
+        </div>
+
+        <!-- Right: Dynamic user section -->
+        <div class="flex items-center gap-3" id="header-right">
+            <!-- Will be populated by JavaScript based on login state -->
+        </div>
+    </header>
+
+    <script>
+        // Animated logo - switch every 5 seconds
+        (function () {
+            let showBotevgrad = false;
+            setInterval(() => {
+                showBotevgrad = !showBotevgrad;
+                document.getElementById('logo-selnet').style.opacity = showBotevgrad ? '0' : '1';
+                document.getElementById('logo-botevgrad').style.opacity = showBotevgrad ? '1' : '0';
+            }, 5000);
+        })();
+
+        // Role labels
+        const ROLE_LABELS = {
+            'ADMIN': 'Администратор',
+            'ADMINISTRATOR': 'Администратор',
+            'MODERATOR': 'Модератор',
+            'OPERATOR': 'Оператор',
+            'USER': 'Потребител'
+        };
+
+        // Dynamic header based on user login state
+        (function () {
+            const headerRight = document.getElementById('header-right');
+
+            // Try to get user from localStorage
+            const userStr = localStorage.getItem('user');
+            const token = localStorage.getItem('token') || localStorage.getItem('idToken') || localStorage.getItem('firebaseToken');
+
+            if (userStr && token) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const displayName = user.displayName || user.email?.split('@')[0] || 'Потребител';
+                    const photoURL = user.photoURL;
+                    const role = user.role || 'USER';
+                    const roleLabel = ROLE_LABELS[role] || 'Потребител';
+
+                    // Get role-based link text and URL
+                    let adminLinkText = 'Моите сигнали';
+                    let adminLinkUrl = '/me';
+                    if (role === 'ADMIN') {
+                        adminLinkText = 'Admin Panel';
+                        adminLinkUrl = '/admin';
+                    } else if (role === 'ADMINISTRATOR') {
+                        adminLinkText = 'Администриране';
+                        adminLinkUrl = '/administrator/signals';
+                    } else if (role === 'MODERATOR') {
+                        adminLinkText = 'Модериране';
+                        adminLinkUrl = '/moderator';
+                    } else if (role === 'OPERATOR') {
+                        adminLinkText = 'Оператор';
+                        adminLinkUrl = '/operator';
+                    }
+
+                    // Build avatar HTML
+                    let avatarHTML = '';
+                    if (photoURL && (photoURL.startsWith('http') || photoURL.startsWith('data:'))) {
+                        avatarHTML = `<img src="${photoURL}" alt="" class="h-full w-full object-cover">`;
+                    } else {
+                        avatarHTML = `
+                        <svg class="h-full w-full text-gray-300 p-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                    `;
+                    }
+
+                    // Build dropdown menu based on role
+                    let dropdownItems = '';
+
+                    if (role === 'USER' || !role) {
+                        dropdownItems = `
+                        <a href="/me" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                            Моите сигнали
+                        </a>
+                        <a href="/profile" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                            Профил
+                        </a>
+                        <a href="/settings" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            Настройки
+                        </a>
+                    `;
+                    } else if (role === 'ADMINISTRATOR') {
+                        dropdownItems = `
+                        <a href="/administrator/signals" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+                            Управление на сигнали
+                        </a>
+                        <a href="/administrator/users" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
+                            Потребители (read-only)
+                        </a>
+                        <a href="/profile" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                            Профил
+                        </a>
+                        <a href="/settings" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            Настройки
+                        </a>
+                    `;
+                    } else if (role === 'ADMIN') {
+                        dropdownItems = `
+                        <a href="/admin" class="flex items-center gap-2 px-4 py-2 text-sm text-purple-600 font-semibold hover:bg-purple-50">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+                            Admin Panel
+                        </a>
+                        <a href="/admin/users" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
+                            Потребители
+                        </a>
+                        <a href="/admin/roles" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+                            Роли
+                        </a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <a href="/profile" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                            Моят профил
+                        </a>
+                        <a href="/settings" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            Настройки
+                        </a>
+                    `;
+                    }
+
+                    headerRight.innerHTML = `
+                    <!-- Notification Bell -->
+                    <button class="relative p-1.5 rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100 focus:outline-none transition-colors" onclick="window.location.href='${adminLinkUrl}'" title="Известия">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                        </svg>
+                    </button>
+                    
+                    <!-- Role-based link -->
+                    <a href="${adminLinkUrl}" class="font-semibold text-sm text-gray-700 hover:text-green-600 transition-colors hidden sm:inline">
+                        ${adminLinkText}
+                    </a>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="relative" id="profile-dropdown">
+                        <button class="flex items-center space-x-2 hover:opacity-80 transition-opacity focus:outline-none" onclick="toggleDropdown(event)">
+                            <span class="inline-block h-8 w-8 overflow-hidden rounded-full bg-gray-100 ring-2 ring-gray-200 hover:ring-green-500 transition-all">
+                                ${avatarHTML}
+                            </span>
+                            <div class="hidden sm:flex flex-col items-start">
+                                <span class="font-semibold text-gray-900 text-sm">${displayName}</span>
+                                <span class="text-xs text-gray-500">${roleLabel}</span>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                            ${dropdownItems}
+                            <hr class="my-1 border-gray-200">
+                            <button onclick="logout()" class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                                Изход
+                            </button>
+                        </div>
+                    </div>
+                `;
+                } catch (e) {
+                    console.error('Error parsing user:', e);
+                    showLoginButtons();
+                }
+            } else {
+                showLoginButtons();
+            }
+
+            function showLoginButtons() {
+                headerRight.innerHTML = `
+                <a href="/login" class="px-3.5 py-1.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-semibold text-sm hover:bg-gray-50 transition-colors">
+                    Влез
+                </a>
+                <a href="/register" class="px-3.5 py-1.5 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-all shadow-sm hover:shadow-md">
+                    Регистрация
+                </a>
+            `;
+            }
+
+            // Toggle dropdown
+            window.toggleDropdown = function (e) {
+                e.stopPropagation();
+                const menu = document.getElementById('dropdown-menu');
+                menu.classList.toggle('hidden');
+            };
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function (e) {
+                const dropdown = document.getElementById('profile-dropdown');
+                const menu = document.getElementById('dropdown-menu');
+                if (dropdown && menu && !dropdown.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+
+            // Logout function
+            window.logout = function () {
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('idToken');
+                localStorage.removeItem('firebaseToken');
+                window.location.href = '/';
+            };
+        })();
+    </script>
+
+    <!-- Main Content -->
+    <main class="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8 flex-1">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200">
+            <!-- Заглавие на формата -->
+            <div class="mb-8 pb-6 border-b border-gray-200">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Подай нов сигнал</h1>
+                <p class="text-gray-600">Попълни формата по-долу за да подадеш сигнал за проблем в общината</p>
+            </div>
+
+            <form class="space-y-6">
+
+                <!-- Заглавие на сигнала -->
+                <div>
+                    <label for="signal-title"
+                        class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
+                            </path>
+                        </svg>
+                        Заглавие на сигнала
+                    </label>
+                    <input type="text" id="signal-title"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 placeholder:text-gray-400 bg-gray-50 text-base py-2.5"
+                        placeholder="Напр. 'Голяма дупка на ул. Христо Ботев'">
+                </div>
+
+                <!-- Тип и Населено място (на един ред) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Тип на категория -->
+                    <div>
+                        <label for="signal-category" class="block text-sm font-medium text-gray-700 mb-2">Тип на
+                            категория</label>
+                        <select id="signal-category"
+                            class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50 py-2.5">
+                            <option value="">Избери категория...</option>
+                            <option value="Пожар">🔥 Пожар</option>
+                            <option value="ВиК">💧 ВиК</option>
+                            <option value="Ток">⚡ Ток</option>
+                            <option value="Пътища и тротоари">🛣️ Пътища и тротоари</option>
+                            <option value="отпадъци">🗑️ Сметище/Отпадъци</option>
+                            <option value="Осветление">💡 Осветление</option>
+                            <option value="Транспорт">🚗 Транспорт</option>
+                            <option value="Шум">🔊 Шум</option>
+                            <option value="Друго">📌 Друго</option>
+                        </select>
+                    </div>
+
+                    <!-- Населено място -->
+                    <div>
+                        <label for="signal-location" class="block text-sm font-medium text-gray-700 mb-2">Населено
+                            място</label>
+                        <select id="signal-location"
+                            class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50 py-2.5">
+                            <option value="" data-lat="" data-lng="">Избери населено място...</option>
+                            <option value="гр. Ботевград" data-lat="42.907600" data-lng="23.794300">гр. Ботевград
+                            </option>
+                            <option value="с. Врачеш" data-lat="42.891213" data-lng="23.747859">с. Врачеш</option>
+                            <option value="с. Трудовец" data-lat="42.916739" data-lng="23.843346">с. Трудовец</option>
+                            <option value="с. Скравена" data-lat="42.951819" data-lng="23.768394">с. Скравена</option>
+                            <option value="с. Литаково" data-lat="42.951520" data-lng="23.675151">с. Литаково</option>
+                            <option value="с. Новачене" data-lat="42.977052" data-lng="23.729491">с. Новачене</option>
+                            <option value="с. Гурково" data-lat="42.976538" data-lng="23.688286">с. Гурково</option>
+                            <option value="с. Боженица" data-lat="43.009987" data-lng="23.815516">с. Боженица</option>
+                            <option value="с. Радотина" data-lat="42.992849" data-lng="23.636167">с. Радотина</option>
+                            <option value="с. Липница" data-lat="43.029245" data-lng="23.754662">с. Липница</option>
+                            <option value="с. Краево" data-lat="42.982006" data-lng="23.607167">с. Краево</option>
+                            <option value="с. Рашково" data-lat="43.008994" data-lng="23.618046">с. Рашково</option>
+                            <option value="с. Еловдол" data-lat="43.041151" data-lng="23.771706">с. Еловдол</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Местоположение (Адрес) -->
+                <div>
+                    <label for="signal-address" class="block text-sm font-medium text-gray-700 mb-2">
+                        Местоположение (по избор)
+                    </label>
+                    <input type="text" id="signal-address"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 placeholder:text-gray-400 bg-gray-50"
+                        placeholder="Въведете адрес, ако желаете...">
+                    <p class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Местоположението се избира на картата по-долу
+                    </p>
+                </div>
+
+                <!-- Карта за избор -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Избери местоположението на картата
+                    </label>
+                    <div id="map-submit" class="w-full bg-gray-200 z-10 rounded-xl shadow-lg border-2 border-green-200">
+                    </div>
+                </div>
+
+                <!-- Описание на сигнала -->
+                <div>
+                    <label for="signal-description" class="block text-sm font-medium text-gray-700 mb-2">Описание на
+                        сигнала</label>
+                    <textarea id="signal-description" rows="6"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 placeholder:text-gray-400 bg-gray-50"
+                        placeholder="Опиши проблема подробно - колкото повече информация, толкова по-добре..."></textarea>
+                    <p class="mt-2 text-xs text-gray-500">Опишете проблема възможно най-подробно</p>
+                </div>
+
+                <!-- Качване на снимки -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        Снимки / Видео (по избор)
+                    </label>
+                    <div id="drop-zone"
+                        class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400 transition-colors duration-300 drop-zone-icon"
+                                stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path
+                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex justify-center text-sm text-gray-600">
+                                <label for="file-upload"
+                                    class="relative cursor-pointer bg-white px-3 py-1 rounded-md font-medium text-green-600 hover:text-green-500 hover:bg-green-50 transition-all duration-200">
+                                    <span>📁 Избор на файл</span>
+                                    <input id="file-upload" name="file-upload" type="file" accept="image/*,video/*"
+                                        class="hidden">
+                                </label>
+                            </div>
+                            <p class="text-sm text-gray-500">или плъзни и пусни файла тук</p>
+                            <p class="text-xs text-gray-500 pt-2">📷 Снимки (PNG, JPG) • 🎥 Видео (до 15 сек, MP4)</p>
+                        </div>
+                    </div>
+                    <!-- Превю на качените файлове -->
+                    <div id="media-preview" class="mt-4 hidden">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div id="preview-container" class="col-span-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Анонимен сигнал (Превключвател) -->
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <span class="text-sm font-medium text-gray-700">Подай сигнала анонимно</span>
+                    <label for="anonymous-toggle" class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="anonymous-toggle" class="sr-only peer">
+                        <div
+                            class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-green-300 toggle-bg transition-colors">
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Бутон за изпращане -->
+                <div class="flex gap-4">
+                    <button type="submit"
+                        class="flex-1 flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-lg shadow-md text-lg font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-[1.02]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                        Подай сигнал
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </main>
+
+    <!-- Video Trim Modal -->
+    <div id="video-trim-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title"
+        role="dialog" aria-modal="true">
+        <!-- Backdrop с blur -->
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm transition-opacity"></div>
+
+        <!-- Modal Container -->
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div
+                class="relative transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all w-full max-w-3xl">
+
+                <!-- Modal Header -->
+                <div class="bg-gradient-to-r from-green-600 to-green-500 px-5 py-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            ✂️ Избери 15 секунди от видеото
+                        </h3>
+                        <button type="button" onclick="closeVideoModal()"
+                            class="text-white hover:text-gray-200 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="px-5 py-4 bg-gray-50">
+
+                    <!-- Video Preview -->
+                    <div class="mb-4 bg-black rounded-lg overflow-hidden shadow-lg">
+                        <video id="modal-video-player" controls class="w-full h-56 object-contain">
+                            <source src="" type="video/mp4">
+                        </video>
+                    </div>
+
+                    <!-- Info Bar -->
+                    <div
+                        class="mb-4 flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2">
+                        <span class="text-sm text-yellow-800">
+                            📹 Видео: <span id="modal-video-duration" class="font-bold">0</span>s
+                        </span>
+                        <span class="text-sm text-green-700 font-bold">
+                            ✂️ Избор: <span id="modal-selected-duration">15.0</span>s
+                        </span>
+                    </div>
+
+                    <!-- Trim Controls -->
+                    <div class="bg-white rounded-lg p-4 shadow border border-gray-200">
+
+                        <!-- Visual Timeline -->
+                        <div class="mb-4">
+                            <div class="relative h-12 bg-gray-200 rounded-lg overflow-hidden">
+                                <!-- Full video bar -->
+                                <div class="absolute inset-0 flex items-center px-2">
+                                    <span class="text-xs text-gray-500">0s</span>
+                                    <span class="flex-1"></span>
+                                    <span class="text-xs text-gray-500" id="full-duration">60s</span>
+                                </div>
+                                <!-- Selected range indicator -->
+                                <div id="range-indicator"
+                                    class="absolute top-0 bottom-0 bg-gradient-to-r from-green-400 to-blue-400 opacity-70"
+                                    style="left: 0%; width: 25%;"></div>
+                                <!-- Start marker -->
+                                <div id="start-marker" class="absolute top-0 bottom-0 w-1 bg-green-600"
+                                    style="left: 0%;"></div>
+                                <!-- End marker -->
+                                <div id="end-marker" class="absolute top-0 bottom-0 w-1 bg-blue-600" style="left: 25%;">
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-1 text-xs text-gray-600">
+                                <span>⬅ Начало: <span id="timeline-start"
+                                        class="font-bold text-green-600">0.0s</span></span>
+                                <span>Край: <span id="timeline-end" class="font-bold text-blue-600">15.0s</span>
+                                    ➡</span>
+                            </div>
+                        </div>
+
+                        <!-- Start Slider -->
+                        <div class="mb-3">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-medium text-gray-700">🟢 Начало:</label>
+                                <span id="modal-start-display" class="text-sm font-bold text-green-600">0.0s</span>
+                            </div>
+                            <input type="range" id="modal-trim-start" min="0" max="60" step="0.1" value="0"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                oninput="updateModalTrim('start')">
+                        </div>
+
+                        <!-- End Slider -->
+                        <div class="mb-3">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-medium text-gray-700">🔵 Край:</label>
+                                <span id="modal-end-display" class="text-sm font-bold text-blue-600">15.0s</span>
+                            </div>
+                            <input type="range" id="modal-trim-end" min="0" max="60" step="0.1" value="15"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                oninput="updateModalTrim('end')">
+                        </div>
+
+                        <!-- Preview Button -->
+                        <button type="button" onclick="previewTrimmedSection()"
+                            class="w-full py-2 px-4 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center gap-2">
+                            ▶️ Преглед на избраното
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-100 px-5 py-3 flex gap-2 justify-end">
+                    <button type="button" onclick="closeVideoModal()"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-400 transition-colors">
+                        ✗ Откажи
+                    </button>
+                    <button type="button" onclick="confirmModalVideoTrim()"
+                        class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-lg">
+                        ✓ Потвърди
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div
+            class="container mx-auto max-w-7xl py-8 px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+            <div class="mb-4 md:mb-0">
+                <span>Copyright © 2025 Моят Ботевград от ДИМИТРИ ТЕХ ООД.</span>
+            </div>
+            <div class="flex space-x-6">
+                <a href="#" class="hover:text-green-600">Архив сигнали</a>
+                <a href="#" class="hover:text-green-600">За платформата</a>
+                <a href="#" class="hover:text-green-600">Условия за ползване</a>
+                <a href="#" class="hover:text-green-600">Защита на личните данни</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS (за картата) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- JavaScript за картата на тази страница -->
+    <script>
+        // ==========================================
+        // ГЛОБАЛНИ ФУНКЦИИ (За достъп от HTML бутони)
+        // ==========================================
+
+        // Променливи за медия файловете
+        window.uploadedFile = null;
+        window.tempVideoFile = null;
+        window.tempVideoDuration = 0;
+
+        // Променливи за тримване на видео
+        let videoTrimStart = 0;
+        let videoTrimEnd = 15;
+
+        // Функция за премахване на избрания файл
+        window.removeMedia = function () {
+            window.uploadedFile = null;
+            videoTrimStart = 0;
+            videoTrimEnd = 15;
+
+            const fileInput = document.getElementById('file-upload');
+            const mediaPreview = document.getElementById('media-preview');
+            const previewContainer = document.getElementById('preview-container');
+
+            if (fileInput) fileInput.value = '';
+            if (previewContainer) previewContainer.innerHTML = '';
+            if (mediaPreview) mediaPreview.classList.add('hidden');
+        };
+
+        // Затваряне на модала
+        window.closeVideoModal = function () {
+            const modal = document.getElementById('video-trim-modal');
+            const videoPlayer = document.getElementById('modal-video-player');
+            const fileInput = document.getElementById('file-upload');
+
+            if (modal) modal.classList.add('hidden');
+
+            if (videoPlayer) {
+                videoPlayer.pause();
+                videoPlayer.src = '';
+            }
+
+            // Чистим input-а, ако е отказано
+            if (fileInput) fileInput.value = '';
+            window.tempVideoFile = null;
+        };
+
+        // Обновяване на слайдерите в модала
+        window.updateModalTrim = function (movedSlider) {
+            const startSlider = document.getElementById('modal-trim-start');
+            const endSlider = document.getElementById('modal-trim-end');
+            const videoPlayer = document.getElementById('modal-video-player');
+
+            let startValue = parseFloat(startSlider.value);
+            let endValue = parseFloat(endSlider.value);
+            const duration = window.tempVideoDuration || 60;
+
+            if (movedSlider === 'start') {
+                endValue = startValue + 15;
+                if (endValue > duration) {
+                    endValue = duration;
+                    startValue = endValue - 15;
+                    startSlider.value = startValue;
+                }
+                endSlider.value = endValue;
+            } else {
+                startValue = endValue - 15;
+                if (startValue < 0) {
+                    startValue = 0;
+                    endValue = 15;
+                    endSlider.value = endValue;
+                }
+                startSlider.value = startValue;
+            }
+
+            // UI Updates
+            document.getElementById('modal-start-display').textContent = startValue.toFixed(1) + 's';
+            document.getElementById('modal-end-display').textContent = endValue.toFixed(1) + 's';
+            document.getElementById('timeline-start').textContent = startValue.toFixed(1) + 's';
+            document.getElementById('timeline-end').textContent = endValue.toFixed(1) + 's';
+            document.getElementById('modal-selected-duration').textContent = (endValue - startValue).toFixed(1);
+
+            // Visual Range
+            const startPercent = (startValue / duration) * 100;
+            const widthPercent = ((endValue - startValue) / duration) * 100;
+            document.getElementById('range-indicator').style.left = startPercent + '%';
+            document.getElementById('range-indicator').style.width = widthPercent + '%';
+            document.getElementById('start-marker').style.left = startPercent + '%';
+            document.getElementById('end-marker').style.left = (startPercent + widthPercent) + '%';
+
+            // Global Update
+            videoTrimStart = startValue;
+            videoTrimEnd = endValue;
+
+            if (videoPlayer) videoPlayer.currentTime = startValue;
+        };
+
+        // Преглед на отрязъка
+        window.previewTrimmedSection = function () {
+            const videoPlayer = document.getElementById('modal-video-player');
+            if (!videoPlayer) return;
+
+            videoPlayer.currentTime = videoTrimStart;
+            videoPlayer.play();
+
+            const checkTime = setInterval(() => {
+                if (videoPlayer.currentTime >= videoTrimEnd) {
+                    videoPlayer.pause();
+                    clearInterval(checkTime);
+                }
+            }, 100);
+        };
+
+        // Потвърждаване на видеото
+        window.confirmModalVideoTrim = function () {
+            window.uploadedFile = window.tempVideoFile;
+            const previewContainer = document.getElementById('preview-container');
+            const mediaPreview = document.getElementById('media-preview');
+            const videoURL = URL.createObjectURL(window.uploadedFile);
+
+            previewContainer.innerHTML = `
+                <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-4 border-2 border-green-200 shadow-lg">
+                    <div class="flex items-start gap-4">
+                        <div class="w-48 h-32 bg-black rounded-lg overflow-hidden shadow-md flex-shrink-0 relative">
+                            <video src="${videoURL}" class="w-full h-full object-contain" 
+                                onloadedmetadata="this.currentTime=${videoTrimStart.toFixed(1)}">
+                            </video>
+                            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
+                                <p class="text-white text-xs font-bold">🎬 ${videoTrimStart.toFixed(1)}s - ${videoTrimEnd.toFixed(1)}s</p>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-2">
+                                <p class="text-sm font-bold text-gray-800">🎥 ${window.uploadedFile.name}</p>
+                                <button type="button" onclick="removeMedia()" class="bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 shadow-sm border border-green-200">
+                                <p class="text-xs font-semibold text-green-700 mb-1">✂️ ИЗБРАН ОТРЯЗЪК: <span class="text-black font-normal">${videoTrimStart.toFixed(1)}s - ${videoTrimEnd.toFixed(1)}s</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            mediaPreview.classList.remove('hidden');
+
+            // Затваряме модала ръчно, без да викаме пълната closeVideoModal, за да не затрием файла
+            document.getElementById('video-trim-modal').classList.add('hidden');
+            const vp = document.getElementById('modal-video-player');
+            if (vp) { vp.pause(); vp.src = ''; }
+        };
+
+        // ==========================================
+        // MAIN LOGIC (DOMContentLoaded)
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. Променливи за Карта и Локация ---
+            let map;
+            let marker = null;
+            let currentIcon = null;
+            let isProgrammaticUpdate = false;
+
+            // Глобални координати за формата
+            let selectedLat = null;
+            let selectedLng = null;
+
+            const addressInput = document.getElementById('signal-address');
+            const settlementSelect = document.getElementById('signal-location');
+            const categorySelect = document.getElementById('signal-category');
+            const form = document.querySelector('form');
+
+            // --- 2. Инициализация на Картата ---
+            // Координати на Ботевград: [42.906, 23.791]
+            map = L.map('map-submit').setView([42.906, 23.791], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // --- 3. Помощни функции за икони ---
+            function createCustomIcon(category) {
+                if (!category) return null;
+                return L.icon({
+                    iconUrl: `/pointers/${category}.png`,
+                    iconSize: [30, 41],
+                    iconAnchor: [15, 41],
+                    popupAnchor: [0, -41]
+                });
+            }
+
+            // --- 4. Event Listeners за UI елементи ---
+
+            // Промяна на населено място -> Центриране на картата
+            settlementSelect.addEventListener('change', function () {
+                const selectedOption = this.options[this.selectedIndex];
+                const lat = parseFloat(selectedOption.getAttribute('data-lat'));
+                const lng = parseFloat(selectedOption.getAttribute('data-lng'));
+
+                if (lat && lng) {
+                    map.setView([lat, lng], 15);
+                }
+            });
+
+            // Промяна на категория -> Смяна на иконата
+            categorySelect.addEventListener('change', function () {
+                const selectedCategory = this.value;
+                if (selectedCategory) {
+                    currentIcon = createCustomIcon(selectedCategory);
+                    if (marker) {
+                        marker.setIcon(currentIcon);
+                    }
+                } else {
+                    currentIcon = null;
+                }
+            });
+
+            // --- 5. Логика: Клик върху картата (Reverse Geocoding) ---
+            map.on('click', async function (e) {
+                // Актуализиране на координатите за submit
+                selectedLat = e.latlng.lat;
+                selectedLng = e.latlng.lng;
+
+                // Управление на маркера
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+                const markerOptions = currentIcon ? { icon: currentIcon } : {};
+                marker = L.marker(e.latlng, markerOptions).addTo(map);
+
+                // UI feedback
+                marker.bindPopup('<b>⌛ Зареждане на адрес...</b>').openPopup();
+
+                try {
+                    // Reverse Geocode
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${selectedLat}&lon=${selectedLng}&accept-language=bg`);
+                    const data = await response.json();
+
+                    let addressText = `Локация: ${selectedLat.toFixed(5)}, ${selectedLng.toFixed(5)}`;
+
+                    if (!data.error && data.address) {
+                        addressText = [
+                            data.address.road,
+                            data.address.house_number,
+                            data.address.suburb,
+                            data.address.city || data.address.town || data.address.village
+                        ].filter(Boolean).join(', ');
+                    }
+
+                    // Обновяване на полето (блокираме обратния loop)
+                    if (addressInput) {
+                        isProgrammaticUpdate = true;
+                        addressInput.value = addressText;
+                        addressInput.classList.add('bg-green-50');
+                        setTimeout(() => addressInput.classList.remove('bg-green-50'), 1000);
+                    }
+
+                    // Обновяване на Popup-а
+                    const cat = categorySelect.value || 'Не е избрана';
+                    marker.setPopupContent(`<b>📍 Избрана локация</b><br>${addressText}<br><span class="text-xs text-gray-500">${cat}</span>`);
+
+                } catch (error) {
+                    console.error(error);
+                    if (marker) marker.setPopupContent('<b>Грешка</b><br>Неуспешно зареждане на адрес');
+                }
+            });
+
+            // --- 6. Логика: Писане на адрес (Forward Geocoding) ---
+
+
+
+
+            // Нормализация на текста
+            let addressDebounceTimer = null;
+            let isSearching = false;
+
+            function normalizeAddress(addr) {
+                if (!addr) return '';
+                return addr
+                    .trim()
+                    .replace(/["']/g, '')
+                    .replace(/\s+/g, ' ')
+                    .replace(/^(ул\.?|улица)\s+/i, '')
+                    .trim();
+            }
+
+            async function handleAddressSearch() {
+                if (isSearching || isProgrammaticUpdate) {
+                    isProgrammaticUpdate = false;
+                    return;
+                }
+
+                const rawAddress = addressInput.value.trim();
+                const settlement = settlementSelect.value;
+
+                if (!rawAddress || !settlement || rawAddress.length < 4) return;
+
+                const normalized = normalizeAddress(rawAddress);
+                const cleanSettlement = settlement.replace(/^(с\.|гр\.)\s+/i, '').trim();
+
+                const queries = [
+                    `${normalized}, ${cleanSettlement}`,
+                    `${normalized}, ${cleanSettlement}, България`,
+                    `${normalized}, Ботевград`
+                ];
+
+
+                addressInput.disabled = true;
+                addressInput.placeholder = 'Търся адрес...';
+                isSearching = true;
+                try {
+                    let data = null;
+
+                    for (const q of queries) {
+                        const res = await fetch(
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&accept-language=bg&countrycodes=bg&viewbox=23.6,42.95,23.9,42.75&bounded=1`,
+                            {
+                                headers: {
+                                    'User-Agent': 'BotevgradSignals/1.0'
+                                }
+                            }
+                        );
+
+                        const result = await res.json();
+
+                        if (Array.isArray(result) && result.length > 0) {
+                            data = result;
+                            break;
+                        }
+                    }
+
+                    if (!data) {
+                        console.warn('Адресът не е намерен:', queries);
+                        return;
+                    }
+
+
+                    const lat = parseFloat(data[0].lat);
+                    const lng = parseFloat(data[0].lon);
+
+                    selectedLat = lat;
+                    selectedLng = lng;
+
+                    if (marker) {
+                        marker.setLatLng([lat, lng]);
+                    } else {
+                        marker = L.marker([lat, lng], currentIcon ? { icon: currentIcon } : {}).addTo(map);
+                    }
+
+                    map.setView([lat, lng], 16);
+
+                    marker.bindPopup(`<b>📍 Адрес</b><br>${normalized}`).openPopup();
+
+                } catch (err) {
+                    console.error('Грешка при търсене на адрес:', err);
+                } finally {
+                    addressInput.disabled = false;
+                    addressInput.placeholder = 'Въведете адрес, ако желаете...';
+                    isSearching = false;
+                }
+            }
+
+            addressInput.addEventListener('input', () => {
+                clearTimeout(addressDebounceTimer);
+                addressDebounceTimer = setTimeout(handleAddressSearch, 1200);
+            });
+
+            // --- 7. Обработка на Файлове (Drag & Drop + Input) ---
+            const fileInput = document.getElementById('file-upload');
+            const dropZone = document.getElementById('drop-zone');
+            const previewContainer = document.getElementById('preview-container');
+            const mediaPreview = document.getElementById('media-preview');
+
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Drag & Drop
+            dropZone.addEventListener('click', (e) => {
+                if (e.target.id !== 'file-upload') fileInput.click();
+            });
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                dropZone.classList.add('border-green-500', 'bg-green-50');
+            });
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                dropZone.classList.remove('border-green-500', 'bg-green-50');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                dropZone.classList.remove('border-green-500', 'bg-green-50');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files; // Works in modern browsers
+                    handleFileSelect({ target: { files: files } });
+                }
+            });
+
+            async function handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const fileType = file.type.split('/')[0];
+                if (fileType === 'image') {
+                    handleImageUpload(file);
+                } else if (fileType === 'video') {
+                    handleVideoUpload(file);
+                } else {
+                    alert('Само снимки и видео!');
+                }
+            }
+
+            function handleImageUpload(file) {
+                window.uploadedFile = file;
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const size = (file.size / 1024).toFixed(1);
+                    previewContainer.innerHTML = `
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow flex gap-4">
+                            <img src="${e.target.result}" class="w-24 h-24 object-cover rounded-lg">
+                            <div class="flex-1">
+                                <div class="flex justify-between">
+                                    <span class="font-bold text-sm">${file.name}</span>
+                                    <button type="button" onclick="removeMedia()" class="text-red-500">❌</button>
+                                </div>
+                                <p class="text-xs text-gray-500">${size} KB</p>
+                            </div>
+                        </div>
+                    `;
+                    mediaPreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function handleVideoUpload(file) {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = function () {
+                    window.URL.revokeObjectURL(video.src);
+                    const duration = video.duration;
+
+                    if (duration > 15) {
+                        // Open Editor
+                        window.tempVideoFile = file;
+                        window.tempVideoDuration = duration;
+
+                        const modal = document.getElementById('video-trim-modal');
+                        const vp = document.getElementById('modal-video-player');
+                        vp.src = URL.createObjectURL(file);
+
+                        // Reset UI
+                        document.getElementById('modal-trim-start').max = Math.max(0, duration - 15);
+                        document.getElementById('modal-trim-end').max = duration;
+                        updateModalTrim('start'); // Reset sliders
+
+                        document.getElementById('modal-video-duration').textContent = duration.toFixed(1);
+                        modal.classList.remove('hidden');
+                    } else {
+                        // Direct upload
+                        window.uploadedFile = file;
+                        const url = URL.createObjectURL(file);
+                        previewContainer.innerHTML = `
+                             <div class="bg-green-50 rounded-xl p-4 border border-green-200 shadow flex gap-4">
+                                <video src="${url}" class="w-24 h-24 object-cover rounded-lg"></video>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-bold text-sm">${file.name}</span>
+                                        <button type="button" onclick="removeMedia()" class="text-red-500">❌</button>
+                                    </div>
+                                    <p class="text-xs text-green-600">Готово за качване (${duration.toFixed(1)}s)</p>
+                                </div>
+                            </div>
+                        `;
+                        mediaPreview.classList.remove('hidden');
+                    }
+                };
+                video.src = URL.createObjectURL(file);
+            }
+
+
+            // --- 8. Form Submit ---
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const title = document.getElementById('signal-title').value;
+                const category = document.getElementById('signal-category').value;
+                const district = document.getElementById('signal-location').value;
+                let address = document.getElementById('signal-address').value;
+                const description = document.getElementById('signal-description').value;
+
+                // Validation
+                if (!title || !category || !district || !description) {
+                    alert('Моля, попълнете всички задължителни полета!');
+                    return;
+                }
+                if (!selectedLat || !selectedLng) {
+                    alert('Моля, изберете местоположение на картата!');
+                    return;
+                }
+                if (description.length < 10) {
+                    alert('Описанието трябва да е поне 10 символа!');
+                    return;
+                }
+                if (!address || address.trim() === '') address = 'не е описано';
+
+                // Data Prep
+                const signalData = {
+                    title,
+                    description,
+                    category,
+                    district,
+                    address,
+                    latitude: selectedLat,
+                    longitude: selectedLng,
+                    hasMedia: window.uploadedFile !== null,
+                    mediaName: window.uploadedFile ? window.uploadedFile.name : null,
+                    videoTrim: (window.uploadedFile && window.uploadedFile.type.startsWith('video'))
+                        ? { start: videoTrimStart, end: videoTrimEnd }
+                        : null
+                };
+
+                // UI Loading
+                const btn = form.querySelector('button[type="submit"]');
+                const originalText = btn.textContent;
+                btn.textContent = 'Подаване...';
+                btn.disabled = true;
+
+                try {
+                    const res = await fetch('/api/signals', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(signalData)
+                    });
+                    console.log(signalData);
+
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || 'Грешка');
+                    }
+
+                    alert('Успешно подаден сигнал!');
+                    window.location.href = '/signals';
+
+                } catch (err) {
+                    console.error(err);
+                    alert('Грешка: ' + err.message);
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            });
+
+        });
+
+        // Logo Animation (Global)
+        setInterval(() => {
+            const logoSelnet = document.getElementById('logo-selnet');
+            const logoBotevgrad = document.getElementById('logo-botevgrad');
+            if (logoSelnet.style.opacity === '1') {
+                logoSelnet.style.opacity = '0';
+                logoBotevgrad.style.opacity = '1';
+            } else {
+                logoSelnet.style.opacity = '1';
+                logoBotevgrad.style.opacity = '0';
+            }
+        }, 5000);
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div
+            class="container mx-auto max-w-7xl py-6 px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+            <div class="mb-4 md:mb-0 flex items-center gap-3">
+                <img src="/logo-selnet-full.png" alt="СелНет" class="h-6 w-auto object-contain">
+                <span class="text-gray-400">|</span>
+                <span>© 2025 ДАНТРИ Тех ООД</span>
+            </div>
+            <nav class="flex flex-wrap justify-center md:justify-end gap-4 md:gap-6">
+                <a href="/signals" class="hover:text-green-600 transition-colors">Архив сигнали</a>
+                <a href="/about" class="hover:text-green-600 transition-colors">За платформата</a>
+                <a href="/terms" class="hover:text-green-600 transition-colors">Условия за ползване</a>
+                <a href="/privacy" class="hover:text-green-600 transition-colors">Защита на данни</a>
+                <a href="/contact" class="hover:text-green-600 transition-colors">Контакти</a>
+            </nav>
+        </div>
+    </footer>
+
+</body>
+
+</html>

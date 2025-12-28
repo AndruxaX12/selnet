@@ -1,0 +1,14 @@
+node_modules/
+.turbo/
+**/.turbo/
+apps/web/.next/
+apps/web/out/
+apps/functions/lib/
+apps/functions/dist/
+coverage/
+dist/
+build/
+*.log
+.env*
+.firebase/
+.vercel/

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /*/admin/
+Disallow: /embed/preview
+Disallow: /api/
+Disallow: /_next/
+
+Sitemap: https://selnet.bg/sitemap.xml

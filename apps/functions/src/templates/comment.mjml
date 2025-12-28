@@ -1,0 +1,12 @@
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text>Има нов коментар под <b>{{title}}</b> ({{collection}}).</mj-text>
+        <mj-spacer height="6px" />
+        <mj-text>{{commentPreview}}</mj-text>
+        <mj-button href="{{url}}">Отвори дискусията</mj-button>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

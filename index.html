@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моят Ботевград - Начало</title>
+    <!-- Зареждане на Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Зареждане на шрифта Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Прилагане на шрифта Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Общи стилове за бутони --- */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* 6px */
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        /* Основен CTA бутон (Зелен) */
+        .btn-primary-green {
+            background-color: #16a34a; /* tailwind-green-600 */
+            color: white;
+            border-color: #16a34a;
+        }
+        .btn-primary-green:hover {
+            background-color: #15803d; /* tailwind-green-700 */
+            border-color: #15803d;
+        }
+
+        /* Вторичен бутон (за "Влез") - ОСТАВА СИВ */
+        .btn-secondary {
+            background-color: #ffffff;
+            color: #374151; /* tailwind-gray-700 */
+            border-color: #d1d5db; /* tailwind-gray-300 */
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        .btn-secondary:hover {
+            background-color: #f9fafb; /* tailwind-gray-50 */
+            border-color: #9ca3af; /* tailwind-gray-400 */
+        }
+        
+        /* Активен ФИЛТЪР бутон (Зелен) */
+        .btn-filter-active {
+            background-color: #16a34a; /* tailwind-green-600 */
+            color: white;
+            border-color: #16a34a;
+        }
+        .btn-filter-active:hover {
+            background-color: #15803d; /* tailwind-green-700 */
+            border-color: #15803d;
+        }
+
+        /* Неактивен ФИЛТЪР бутон (Зелен контур) */
+        .btn-filter-inactive {
+            background-color: #ffffff;
+            color: #16a34a; /* tailwind-green-600 */
+            border-color: #16a34a; /* tailwind-green-600 */
+        }
+        .btn-filter-inactive:hover {
+            background-color: #f0fdf4; /* tailwind-green-50 */
+        }
+        
+        /* --- Стил за картата --- */
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #f3f4f6; /* tailwind-gray-100 */
+            overflow: hidden;
+        }
+        
+        .street {
+            position: absolute;
+            background-color: #ffffff;
+            z-index: 1;
+        }
+        
+        .park {
+            position: absolute;
+            background-color: #dcfce7; /* tailwind-green-100 */
+            border-radius: 0.5rem;
+            transform: skew(-15deg);
+            z-index: 2;
+        }
+        
+        .main-road {
+            position: absolute;
+            background-color: #fef9c3; /* tailwind-yellow-100 */
+            z-index: 3;
+        }
+        
+        .pin {
+            position: absolute;
+            z-index: 10;
+        }
+
+        /* --- Стил за placeholder-а на изображението --- */
+        .image-placeholder-small {
+            width: 64px;
+            height: 64px;
+            background-color: #f3f4f6; /* tailwind-gray-100 */
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #9ca3af; /* tailwind-gray-400 */
+        }
+        .image-placeholder-small svg {
+            width: 32px;
+            height: 32px;
+        }
+        
+        /* Стил за ГОЛЯМ placeholder, както е в мокъп 1.3 */
+        .image-placeholder-large {
+            width: 100%;
+            height: 12rem; /* 192px */
+            background-color: #f3f4f6; /* tailwind-gray-100 */
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af; /* tailwind-gray-400 */
+            margin-bottom: 0.75rem; /* 12px */
+        }
+        .image-placeholder-large svg {
+            width: 64px;
+            height: 64px;
+        }
+        
+        /* --- Икони за статус --- */
+        .status-icon {
+            width: 16px;
+            height: 16px;
+        }
+        .status-new {
+            color: #ef4444; /* tailwind-red-500 */
+        }
+        .status-in-process {
+            color: #eab308; /* tailwind-yellow-500 */
+        }
+        .status-completed {
+            color: #22c55e; /* tailwind-green-500 */
+        }
+        
+        /* --- Стилове за разгъване (Accordion) --- */
+        .signal-card {
+            /* Плавна промяна на сянката при hover */
+            transition: box-shadow 0.2s ease-out; /* Само за hover ефекта */
+            overflow: hidden;
+        }
+        
+        .signal-description {
+            /* Скрито описание */
+            max-height: 0;
+            opacity: 0;
+            /* По-плавна и специфична анимация */
+            transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+            border-top: 1px solid #e5e7eb; /* tailwind-gray-200 */
+            margin-top: 0.75rem; /* 12px */
+            padding-top: 0.75rem; /* 12px */
+        }
+        
+        .signal-card.is-expanded .signal-description {
+            /* Показване на описанието */
+            max-height: 500px; /* Достатъчно голямо */
+            opacity: 1;
+        }
+        
+        .signal-card .image-placeholder-large {
+            display: none;
+        }
+        
+        .signal-card.is-expanded .image-placeholder-large {
+            display: flex;
+        }
+        
+        .signal-card.is-expanded .image-placeholder-small {
+            display: none;
+        }
+        
+        /* Промяна на подредбата при разгъване */
+        .signal-card .signal-content-wrapper {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            space-x: 0.75rem; /* space-x-3 */
+        }
+        
+        .signal-card.is-expanded .signal-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+    </style>
+</head>
+<body class="bg-white text-gray-900 h-screen flex flex-col overflow-hidden">
+
+    <!-- 1. Хедър -->
+    <header class="flex justify-between items-center p-3 border-b border-gray-200 z-50 bg-white">
+        <!-- Ляво: Лого и Заглавие -->
+        <div class="flex items-center space-x-8">
+            <div class="flex items-center space-x-2">
+                <!-- Икона Лого -->
+                <a href="index.html" class="flex items-center space-x-2">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="40" height="40" rx="8" fill="#E0FBE0"/>
+                        <path d="M13.5 13.1111V16.8889H10V13.1111H13.5ZM18.75 13.1111V16.8889H15.25V13.1111H18.75ZM24 13.1111V16.8889H20.5V13.1111H24ZM29.25 13.1111V16.8889H25.75V13.1111H29.25ZM13.5 18.7778V22.5556H10V18.7778H13.5ZM18.75 18.7778V22.5556H15.25V18.7778H18.75ZM24 18.7778V22.5556H20.5V18.7778H24ZM29.25 18.7778V22.5556H25.75V18.7778H29.25ZM13.5 24.4444V28.2222H10V24.4444H13.5ZM18.75 24.4444V28.2222H15.25V24.4444H18.75ZM24 24.4444V28.2222H20.5V24.4444H24Z" fill="#006400"/>
+                    </svg>
+                    <span class="text-xl font-bold text-gray-800">Моят Ботевград</span>
+                </a>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="signals.html" class="font-medium text-gray-600 hover:text-green-600 transition-colors">Всички сигнали</a>
+            </nav>
+        </div>
+        
+        <!-- Дясно: Бутон Влез -->
+        <div>
+            <!-- ПРОМЕНЕНО: Бутонът "Влез" е заменен с линкове за логнат потребител -->
+            <!-- Подобрени отстояния (space-x-6) и добавени икони -->
+            <div class="flex items-center space-x-6">
+                
+                <!-- ДОБАВЕНО: Бутон Камбанка (Нотификации) -->
+                <button class="relative p-1 rounded-full text-gray-500 hover:text-gray-800 focus:outline-none">
+                    <!-- Червена точка за нотификация -->
+                    <span class="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500 border-2 border-white"></span>
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                    </svg>
+                </button>
+                
+                <a href="#" class="font-semibold text-gray-700 hover:text-green-600 text-sm transition-colors">
+                    Моите сигнали
+                </a>
+                
+                <!-- ДОБАВЕНО: Икона-аватар за профила -->
+                <div class="flex items-center space-x-2">
+                    <span class="inline-block h-8 w-8 overflow-hidden rounded-full bg-gray-100">
+                        <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </span>
+                    <span class="font-semibold text-gray-900 text-sm">
+                        Иван Иванов
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. Главно съдържание -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- 2.1. Лява част: Карта -->
+        <!-- Добавен е клас p-5 за отстояние, за да съответства на дясната колона -->
+        <div class="flex-1 relative h-64 md:h-auto p-5">
+            <div class="map-container">
+                <!-- Декоративни елементи, имитиращи карта -->
+                <div class="street" style="left: 20%; top: 0; width: 8%; height: 100%;"></div>
+                <div class="street" style="left: 60%; top: 0; width: 6%; height: 100%;"></div>
+                <div class="street" style="left: 0; top: 25%; width: 100%; height: 8%;"></div>
+                <div class="street" style="left: 0; top: 65%; width: 100%; height: 6%;"></div>
+                <div class="park" style="left: 5%; top: 40%; width: 40%; height: 20%;"></div>
+                <div class="main-road" style="left: 0; top: 35%; width: 100%; height: 5%;"></div>
+                
+                <!-- Пинове (SVG икони) -->
+                <div class="pin text-red-600" style="left: 22%; top: 15%;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"/></svg>
+                </div>
+                <div class="pin text-red-600" style="left: 62%; top: 30%;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"/></svg>
+                </div>
+                <div class="pin text-red-600" style="left: 30%; top: 50%;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"/></svg>
+                </div>
+                <div class="pin text-red-600" style="left: 45%; top: 75%;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"/></svg>
+                </div>
+            </div>
+
+            <!-- Бутони за филтриране -->
+            <div class="absolute bottom-4 left-4 z-20 flex space-x-2">
+                <button id="btn-current" class="btn btn-filter-active">Текущи</button>
+                <button id="btn-all" class="btn btn-filter-inactive">Всички</button>
+            </div>
+        </div>
+
+        <!-- 2.2. Дясна част: Странична лента -->
+        <aside class="w-full md:w-96 border-l border-gray-200 bg-white flex flex-col p-5 h-full overflow-hidden">
+            <h2 class="text-2xl font-bold mb-4 flex-shrink-0 text-gray-800">Последни сигнали</h2>
+
+            <!-- Скролируем списък със сигнали - Контейнерът ще се пълни от JS -->
+            <div id="signals-list-container" class="flex-1 overflow-y-auto pr-2">
+                <div class="space-y-3">
+                    <!-- Сигналите ще бъдат генерирани тук -->
+                </div>
+            </div>
+
+            <!-- Бутон "Подай сигнал" -->
+            <div class="mt-auto pt-4 flex-shrink-0">
+                <a href="signal.html" class="block">
+                    <button class="btn btn-primary-green w-full text-lg">
+                        Подай сигнал
+                    </button>
+                </a>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- 3. Футър -->
+    <footer class="flex flex-col md:flex-row justify-between items-center p-3 border-t border-gray-200 text-sm text-gray-500 bg-white z-50">
+        <div class="mb-2 md:mb-0">
+            Copyright © 2025 Моят Ботевград от ДАНТРИ Тех ООД
+        </div>
+        <nav class="flex flex-wrap justify-center md:justify-end space-x-4">
+            <a href="#" class="hover:text-gray-900 transition-colors">Архив сигнали</a>
+            <a href="#" class="hover:text-gray-900 transition-colors">За платформата</a>
+            <a href="#" class="hover:text-gray-900 transition-colors">Условия за ползване</a>
+            <a href="#" class="hover:text-gray-900 transition-colors">Защита на личните данни</a>
+        </nav>
+    </footer>
+
+    <!-- JavaScript за интерактивност -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. ДАННИ ---
+            // Примерен масив с данни. В реално приложение това ще идва от API.
+            const allSignals = [
+                {
+                    id: 1,
+                    title: 'Опасна дупка на ул. Иван Вазов',
+                    status: 'нов',
+                    location: 'гр. Ботевград',
+                    time: 'преди 34 мин.',
+                    description: 'Дупката е много голяма и опасна, особено вечер. Намира се точно пред входа на училището.'
+                },
+                {
+                    id: 2,
+                    title: 'Неработеща улична лампа',
+                    status: 'в процес',
+                    location: 'с. Врачеш',
+                    time: 'преди 2 ч.',
+                    description: 'Една от уличните лампи, намиращи се на ул. "Бузлуджа" № 21 не работи от вчера.'
+                },
+                {
+                    id: 3,
+                    title: 'Образувано сметище',
+                    status: 'в процес',
+                    location: 'с. Трудовец',
+                    time: 'преди 11 ч.',
+                    description: 'В края на селото, близо до реката, се е образувало нерегламентирано сметище.'
+                },
+                {
+                    id: 4,
+                    title: 'Дърво с изсъхнали клони',
+                    status: 'завършен',
+                    location: 'гр. Ботевград',
+                    time: 'преди 1 ден',
+                    description: 'Клоните са изсъхнали и има опасност да паднат върху минаващите автомобили. Дървото е на ул. "Гурко".'
+                },
+                {
+                    id: 5,
+                    title: 'Счупена пейка в парка',
+                    status: 'нов',
+                    location: 'гр. Ботевград',
+                    time: 'преди 2 дни',
+                    description: 'Пейката до фонтана е счупена и не може да се използва.'
+                }
+            ];
+
+            // --- 2. ЕЛЕМЕНТИ ---
+            const signalsListContainer = document.getElementById('signals-list-container');
+            const btnCurrent = document.getElementById('btn-current');
+            const btnAll = document.getElementById('btn-all');
+
+            // --- 3. СЪСТОЯНИЕ (STATE) ---
+            let state = {
+                filter: 'current', // 'current' или 'all'
+            };
+
+            // --- 4. ФУНКЦИИ ---
+
+            /**
+             * Генерира HTML за иконата за статус
+             */
+            function getStatusIcon(status) {
+                if (status === 'нов') {
+                    return `<svg class="status-icon status-new" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2Z"/></svg>`;
+                }
+                if (status === 'в процес') {
+                    return `<svg class="status-icon status-in-process" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2Z"/></svg>`;
+                }
+                if (status === 'завършен') {
+                    return `<svg class="status-icon status-completed" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2Z"/></svg>`;
+                }
+                return '';
+            }
+            
+            /**
+             * Генерира HTML за времето
+             */
+            function getTimeIcon() {
+                return `<svg class="inline-block h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 6V12L16 14M20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            }
+
+            /**
+             * Генерира HTML за placeholder за снимка (малък и голям)
+             */
+            function getImagePlaceholder(size = 'small') {
+                const icon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
+                
+                if (size === 'large') {
+                    return `<div class="image-placeholder-large">${icon}</div>`;
+                }
+                return `<div class="image-placeholder-small">${icon}</div>`;
+            }
+
+            /**
+             * (Пре)рисува списъка със сигнали на базата на текущия state.filter
+             */
+            function renderSignals() {
+                // 1. Филтриране на данните
+                const signalsToRender = allSignals.filter(signal => {
+                    if (state.filter === 'all') {
+                        return true; // Покажи всички
+                    }
+                    // 'current' показва "нов" и "в процес"
+                    return signal.status === 'нов' || signal.status === 'в процес';
+                });
+
+                // 2. Генериране на HTML
+                let signalsHTML = '';
+                for (const signal of signalsToRender) {
+                    signalsHTML += `
+                        <div class="signal-card border border-gray-200 rounded-lg shadow-sm hover:shadow-lg cursor-pointer p-4" data-id="${signal.id}">
+                            <div class="signal-content-wrapper flex items-start space-x-3">
+                                <!-- Малък placeholder (видим по подразбиране) -->
+                                <div class="flex-shrink-0">
+                                    ${getImagePlaceholder('small')}
+                                </div>
+                                
+                                <!-- Голям placeholder (скрит по подразбиране, показван при is-expanded) -->
+                                ${getImagePlaceholder('large')}
+
+                                <!-- Текстово съдържание -->
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-gray-800 text-base">${signal.title}</h3>
+                                    <div class="flex items-center space-x-2 text-sm text-gray-600 mt-1">
+                                        <div class="flex items-center space-x-1">
+                                            ${getStatusIcon(signal.status)}
+                                            <span class="font-medium">${signal.status}</span>
+                                        </div>
+                                        <span class="text-gray-300">|</span>
+                                        <span>${signal.location}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1 text-xs text-gray-500 mt-1">
+                                        ${getTimeIcon()}
+                                        <span>${signal.time}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Скрито описание (показва се при is-expanded) -->
+                            <div class="signal-description mt-3 pt-3 border-t border-gray-100">
+                                <h4 class="font-semibold text-gray-700 text-sm">Описание на сигнала:</h4>
+                                <p class="text-sm text-gray-600 mt-1">${signal.description}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 3. Вмъкване на HTML в DOM
+                signalsListContainer.innerHTML = signalsHTML;
+                
+                // 4. (Пре)закачане на event listeners за картите
+                attachCardListeners();
+            }
+
+            /**
+             * Закача event listeners за филтърните бутони
+             */
+            function attachFilterListeners() {
+                btnCurrent.addEventListener('click', () => {
+                    if (state.filter !== 'current') {
+                        state.filter = 'current';
+                        // Актуализиране на стиловете на бутоните
+                        btnCurrent.classList.add('btn-filter-active');
+                        btnCurrent.classList.remove('btn-filter-inactive');
+                        btnAll.classList.add('btn-filter-inactive');
+                        btnAll.classList.remove('btn-filter-active');
+                        // Прерисуване на списъка
+                        renderSignals();
+                    }
+                });
+
+                btnAll.addEventListener('click', () => {
+                    if (state.filter !== 'all') {
+                        state.filter = 'all';
+                        // Актуализиране на стиловете на бутоните
+                        btnAll.classList.add('btn-filter-active');
+                        btnAll.classList.remove('btn-filter-inactive');
+                        btnCurrent.classList.add('btn-filter-inactive');
+                        btnCurrent.classList.remove('btn-filter-active');
+                        // Прерисуване на списъка
+                        renderSignals();
+                    }
+                });
+            }
+
+            /**
+             * Закача event listeners за клик върху картите (за разгъване)
+             */
+            function attachCardListeners() {
+                signalsListContainer.querySelectorAll('.signal-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const wasAlreadyExpanded = card.classList.contains('is-expanded');
+                        
+                        // 1. Затвори всички други отворени карти
+                        signalsListContainer.querySelectorAll('.signal-card.is-expanded').forEach(expandedCard => {
+                            expandedCard.classList.remove('is-expanded');
+                        });
+                        
+                        // 2. Ако тази карта не беше вече отворена, отвори я
+                        if (!wasAlreadyExpanded) {
+                            card.classList.add('is-expanded');
+                        }
+                        // Ако беше отворена, тя вече е затворена от стъпка 1 (или от втория клик)
+                    });
+                });
+            }
+
+
+            // --- 5. ИНИЦИАЛИЗАЦИЯ ---
+            renderSignals(); // Първоначално рисуване (показва "Текущи")
+            attachFilterListeners(); // Закачане на филтрите
+            
+        });
+    </script>
+
+</body>
+</html>

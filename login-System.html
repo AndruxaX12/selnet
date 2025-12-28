@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход / Регистрация - Моят Ботевград</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Шрифт Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Клас за активен таб, както е на мокъпа (синя подсветка) */
+        .tab-active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            border-color: #3b82f6; /* blue-500 */
+        }
+        /* Клас за неактивен таб */
+        .tab-inactive {
+            background-color: white;
+            color: #374151; /* gray-700 */
+            border-color: #d1d5db; /* gray-300 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <!-- 1. Хедър (опростен) -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <svg class="h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622A11.99 11.99 0 0018.402 6a11.959 11.959 0 01-4.402-.787V3.75a3 3 0 00-5.995 0v1.964z" />
+                    </svg>
+                    <span class="font-bold text-xl text-gray-800">Моят Ботевград</span>
+                </a>
+                <a href="index.html" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Начало
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. Главно съдържание (Форма) -->
+    <main class="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        
+        <div class="w-full max-w-md space-y-8">
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                
+                <!-- Лого над формата -->
+                <div class="flex justify-center mb-6">
+                     <span class="font-bold text-2xl text-gray-800">Моят Ботевград</span>
+                </div>
+
+                <!-- Табове за Вход/Регистрация -->
+                <div class="grid grid-cols-2 gap-px mb-6 border border-gray-300 rounded-lg overflow-hidden">
+                    <button id="tab-login" class="py-3 font-medium transition-colors tab-active">
+                        Вход
+                    </button>
+                    <button id="tab-register" class="py-3 font-medium transition-colors tab-inactive">
+                        Регистрация
+                    </button>
+                </div>
+
+                <!-- Форма за ВХОД (показва се по подразбиране) -->
+                <form id="form-login" class="space-y-6" action="#" method="POST">
+                    <!-- Имейл -->
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-700 mb-2">Имейл</label>
+                        <input id="login-email" name="email" type="email" autocomplete="email" required
+                               class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50"
+                               placeholder="imeil@primer.com">
+                    </div>
+
+                    <!-- Парола -->
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700 mb-2">Парола</label>
+                        <div class="relative">
+                            <input id="login-password" name="password" type="password" autocomplete="current-password" required
+                                   class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50"
+                                   placeholder="••••••••">
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400">
+                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639l4.435-7.706A1 1 0 0 1 7.406 3h9.188a1 1 0 0 1 .97.728l4.435 7.706a1.012 1.012 0 0 1 0 .639l-4.435 7.707a1 1 0 0 1-.97.728H7.406a1 1 0 0 1-.97-.728L2.036 12.322Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Бутон Влез -->
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-105">
+                            Влез
+                        </button>
+                    </div>
+
+                    <!-- Разделител -->
+                    <div class="relative flex items-center">
+                        <div class="flex-grow border-t border-gray-300"></div>
+                        <span class="flex-shrink mx-4 text-sm text-gray-500">или</span>
+                        <div class="flex-grow border-t border-gray-300"></div>
+                    </div>
+
+                    <!-- Вход с Google -->
+                    <div>
+                        <button type="button"
+                                class="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-md font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                            <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                            Вход с Google
+                        </button>
+                    </div>
+                    
+                    <!-- Вход с Facebook -->
+                    <div>
+                        <button type="button"
+                                class="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-md font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                            <svg class="w-5 h-5 mr-3 text-[#1877F2]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878V14.89H8.131v-2.779h2.307V9.98c0-2.288 1.373-3.539 3.42-3.539.97 0 1.95.171 1.95.171v2.369h-1.16c-1.13 0-1.49.715-1.49 1.43v1.701h2.63l-.423 2.779h-2.207v7.008C18.343 21.128 22 16.991 22 12z"/></svg>
+                            Вход с Facebook
+                        </button>
+                    </div>
+
+                </form>
+
+                <!-- Форма за РЕГИСТРАЦИЯ (скрита по подразбиране) -->
+                <form id="form-register" class="space-y-6 hidden" action="#" method="POST">
+                    <!-- Име и фамилия -->
+                    <div>
+                        <label for="reg-name" class="block text-sm font-medium text-gray-700 mb-2">Име и фамилия</label>
+                        <input id="reg-name" name="name" type="text" autocomplete="name" required
+                               class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50"
+                               placeholder="Иван Иванов">
+                    </div>
+                    
+                    <!-- Имейл -->
+                    <div>
+                        <label for="reg-email" class="block text-sm font-medium text-gray-700 mb-2">Имейл</label>
+                        <input id="reg-email" name="email" type="email" autocomplete="email" required
+                               class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50"
+                               placeholder="imeil@primer.com">
+                    </div>
+
+                    <!-- Парола -->
+                    <div>
+                        <label for="reg-password" class="block text-sm font-medium text-gray-700 mb-2">Парола</label>
+                        <div class="relative">
+                            <input id="reg-password" name="password" type="password" required
+                                   class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50"
+                                   placeholder="••••••••">
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400">
+                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639l4.435-7.706A1 1 0 0 1 7.406 3h9.188a1 1 0 0 1 .97.728l4.435 7.706a1.012 1.012 0 0 1 0 .639l-4.435 7.707a1 1 0 0 1-.97.728H7.406a1 1 0 0 1-.97-.728L2.036 12.322Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Потвърди парола -->
+                    <div>
+                        <label for="reg-password-confirm" class="block text-sm font-medium text-gray-700 mb-2">Потвърди парола</label>
+                        <div class="relative">
+                            <input id="reg-password-confirm" name="password_confirm" type="password" required
+                                   class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50"
+                                   placeholder="••••••••">
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400">
+                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639l4.435-7.706A1 1 0 0 1 7.406 3h9.188a1 1 0 0 1 .97.728l4.435 7.706a1.012 1.012 0 0 1 0 .639l-4.435 7.707a1 1 0 0 1-.97.728H7.406a1 1 0 0 1-.97-.728L2.036 12.322Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Адрес (по избор) -->
+                    <div>
+                        <label for="reg-address" class="block text-sm font-medium text-gray-700 mb-2">Адрес (по избор)</label>
+                        <input id="reg-address" name="address" type="text"
+                               class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 bg-gray-50"
+                               placeholder="гр. Ботевград, ул. ...">
+                    </div>
+
+                    <!-- Бутон Регистрация -->
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-105">
+                            Регистрирай се
+                        </button>
+                    </div>
+
+                    <!-- Разделител -->
+                    <div class="relative flex items-center">
+                        <div class="flex-grow border-t border-gray-300"></div>
+                        <span class="flex-shrink mx-4 text-sm text-gray-500">или</span>
+                        <div class="flex-grow border-t border-gray-300"></div>
+                    </div>
+
+                    <!-- Регистрация с Google -->
+                    <div>
+                        <button type="button"
+                                class="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-md font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                            <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                            Регистрация с Google
+                        </button>
+                    </div>
+                    
+                    <!-- Регистрация с Facebook -->
+                    <div>
+                        <button type="button"
+                                class="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-md font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                            <svg class="w-5 h-5 mr-3 text-[#1877F2]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878V14.89H8.131v-2.779h2.307V9.98c0-2.288 1.373-3.539 3.42-3.539.97 0 1.95.171 1.95.171v2.369h-1.16c-1.13 0-1.49.715-1.49 1.43v1.701h2.63l-.423 2.779h-2.207v7.008C18.343 21.128 22 16.991 22 12z"/></svg>
+                            Регистрация с Facebook
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- 4. Футър -->
+    <footer class="bg-gray-100 mt-10">
+        <div class="container mx-auto max-w-7xl py-8 px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 border-t border-gray-200">
+            <div class="mb-4 md:mb-0">
+                <span>Copyright © 2025 Моят Ботевград от ДИМИТРИ ТЕХ ООД.</span>
+            </div>
+            <div class="flex space-x-6">
+                <a href="#" class="hover:text-green-600">Архив сигнали</a>
+                <a href="#" class="hover:text-green-600">За платформата</a>
+                <a href="#" class="hover:text-green-600">Условия за ползване</a>
+                <a href="#" class="hover:text-green-600">Защита на личните данни</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript за превключване на табовете -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const formLogin = document.getElementById('form-login');
+            const formRegister = document.getElementById('form-register');
+
+            // Клик на "Вход"
+            tabLogin.addEventListener('click', () => {
+                // Превключване на табове
+                tabLogin.classList.add('tab-active');
+                tabLogin.classList.remove('tab-inactive');
+                tabRegister.classList.add('tab-inactive');
+                tabRegister.classList.remove('tab-active');
+
+                // Показване/скриване на форми
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+            });
+
+            // Клик на "Регистрация"
+            tabRegister.addEventListener('click', () => {
+                // Превключване на табове
+                tabRegister.classList.add('tab-active');
+                tabRegister.classList.remove('tab-inactive');
+                tabLogin.classList.add('tab-inactive');
+                tabLogin.classList.remove('tab-active');
+
+                // Показване/скриване на форми
+                formRegister.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            });
+        });
+    </script>
+
+</body>
+</html>

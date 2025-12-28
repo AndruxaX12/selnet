@@ -1,0 +1,44 @@
+{
+  "name": "СелНет - Гражданска платформа",
+  "short_name": "СелНет",
+  "description": "Мобилно приложение за граждански сигнали, идеи и събития в населените места. Работи офлайн с push известия.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "bg",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Подай сигнал",
+      "short_name": "Сигнал",
+      "url": "/signals/new"
+    },
+    {
+      "name": "Създай събитие",
+      "short_name": "Събитие",
+      "url": "/events/new"
+    },
+    {
+      "name": "Карта",
+      "short_name": "Карта",
+      "url": "/map"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+This is a placeholder for beep.mp3. You need to create a short audio file (100ms sine wave beep) and save it as beep.mp3 in the public directory.
+
+You can create this using online tools like:
+- https://www.online-convert.com/
+- https://www.audacityteam.org/ (free software)
+- Or use any other audio editor
+
+The file should be a short, pleasant notification sound that plays when new notifications arrive.

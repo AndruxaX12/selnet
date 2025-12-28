@@ -1,0 +1,28 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Inter, Arial" />
+      <mj-text font-size="14px" color="#111111" />
+      <mj-button background-color="#111111" color="#ffffff" border-radius="8px" padding="16px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section padding="32px 0">
+      <mj-column>
+        <mj-text align="center" font-size="18px" font-weight="700">СелНет</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" border-radius="12px" padding="24px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="600">{{title}}</mj-text>
+        <mj-divider border-color="#eee" />
+        {{content}}
+      </mj-column>
+    </mj-section>
+    <mj-section padding="24px 0">
+      <mj-column>
+        <mj-text align="center" color="#777" font-size="12px">© {{year}} СелНет</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -1,0 +1,38 @@
+{
+  "functions": { "source": "apps/functions", "runtime": "nodejs20" },
+  "hosting": [
+    {
+      "target": "selnet-ab187",
+      "public": "apps/web",
+      "frameworksBackend": {
+        "region": "europe-west1"
+      },
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "function": "nextjsFunc"
+        }
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": { "port": 9099 },
+    "firestore": { "port": 8080 },
+    "storage": { "port": 9199 },
+    "functions": { "port": 5001 },
+    "hosting": { "port": 5000 },
+    "ui": { "enabled": true, "port": 4000 }
+  }
+}

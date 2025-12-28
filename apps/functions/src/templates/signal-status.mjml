@@ -1,0 +1,13 @@
+<mjml>
+  <mj-head></mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text>Статусът на твоя сигнал <b>"{{signalTitle}}"</b> е сменен на: <b>{{status}}</b>.</mj-text>
+        <mj-spacer height="8px" />
+        <mj-text>Дата: {{date}}</mj-text>
+        <mj-button href="{{url}}">Виж сигнала</mj-button>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
